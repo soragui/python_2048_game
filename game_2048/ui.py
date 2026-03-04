@@ -15,13 +15,14 @@ class GridDisplay(Static):
     
     DEFAULT_CSS = """
     GridDisplay {
-        width: 42;  /* Exact width of the grid: 1 + 5*4 + 1 = 22 chars + padding */
+        width: 42;
         height: 12;
         content-align: center top;
+        align: center middle;
         background: $surface-darken-2;
         border: solid $primary;
         padding: 1 2;
-        margin: 1 auto;  /* auto for horizontal centering */
+        margin: 1 0;
     }
     """
     
