@@ -13,6 +13,18 @@ from .config import GRID_SIZE
 class GridDisplay(Static):
     """Display the 4x4 game grid using rendered text."""
     
+    DEFAULT_CSS = """
+    GridDisplay {
+        width: 42;  /* Exact width of the grid: 1 + 5*4 + 1 = 22 chars + padding */
+        height: 12;
+        content-align: center top;
+        background: $surface-darken-2;
+        border: solid $primary;
+        padding: 1 2;
+        margin: 1 auto;  /* auto for horizontal centering */
+    }
+    """
+    
     def __init__(self, game: Game):
         super().__init__()
         self.game = game
@@ -55,6 +67,18 @@ class GridDisplay(Static):
 
 class ScoreDisplay(Static):
     """Display score and stats."""
+    
+    DEFAULT_CSS = """
+    ScoreDisplay {
+        width: 100%;
+        height: auto;
+        content-align: center middle;
+        background: $primary-background;
+        padding: 1 2;
+        margin: 1 0;
+        text-style: bold;
+    }
+    """
     
     def __init__(self, game: Game):
         super().__init__()
@@ -114,6 +138,7 @@ class GameScreen(Vertical):
     GameScreen {
         width: 100%;
         height: 100%;
+        align: center top;
         padding: 1 2;
     }
     
@@ -121,28 +146,18 @@ class GameScreen(Vertical):
         text-align: center;
         text-style: bold;
         padding: 1 0;
+        width: 100%;
     }
     
     #controls-hint {
         text-align: center;
         color: $text-muted;
         padding: 0 0 1 0;
-    }
-    
-    GridDisplay {
-        background: $surface-darken-2;
-        border: solid $primary;
-        padding: 1;
-        margin: 1 0;
         width: 100%;
-        height: 12;
     }
     
     ScoreDisplay {
-        background: $primary-background;
-        padding: 1 2;
-        margin: 1 0;
-        text-style: bold;
+        width: 42;
     }
     
     #modal-container {
