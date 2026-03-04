@@ -194,25 +194,36 @@ class GameScreen(Vertical):
         width: 100%;
         height: 100%;
         align: center top;
-        padding: 1 2;
+        padding: 0 2;
     }
     
     #game-title {
         text-align: center;
         text-style: bold;
-        padding: 1 0;
+        padding: 0;
+        margin: 1 0;
         width: 100%;
+        height: 1;
     }
     
     #controls-hint {
         text-align: center;
         color: $text-muted;
-        padding: 0 0 1 0;
+        padding: 0;
+        margin: 0 0 1 0;
         width: 100%;
+        height: 1;
     }
     
     ScoreDisplay {
         width: 42;
+        height: 1;
+        padding: 0 2;
+        margin: 1 0;
+    }
+    
+    GridDisplay {
+        margin: 0 0;
     }
     
     #modal-container {
