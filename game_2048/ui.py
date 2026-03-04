@@ -8,132 +8,105 @@ This module defines all visual components:
 """
 
 from textual.app import ComposeResult
-from textual.containers import Container, Horizontal, Vertical
+from textual.containers import Grid, Horizontal, Vertical
 from textual.widgets import Static, Label, Button, Footer, Header
-from textual.binding import Binding
 from textual.screen import ModalScreen
+from textual.binding import Binding
 
 from .game import Game, GameState
-from .config import GRID_SIZE, TILE_VALUES
-from .utils import get_tile_style
+from .config import GRID_SIZE
 
 
 class TileWidget(Static):
-    """A single tile widget displaying a number.
-    
-    The tile's appearance (color, style) changes based on its value.
-    """
+    """A single tile widget displaying a number."""
     
     DEFAULT_CSS = """
     TileWidget {
-        width: 1fr;
-        height: 100%;
-        content-align: center middle;
         background: $surface;
         border: solid $primary-background;
-        margin: 0 1;
+        content-align: center middle;
         text-style: bold;
     }
     
     TileWidget.tile-empty {
         background: $surface-darken-1;
-        color: $text-muted;
     }
     """
     
-    def __init__(self, value: int, row: int, col: int):
-        """Initialize a tile widget.
-        
-        Args:
-            value: Tile value (0 for empty)
-            row: Grid row position
-            col: Grid column position
-        """
-        super().__init__(id=f"tile-{row}-{col}")
+    def __init__(self, value: int = 0):
+        super().__init__()
         self.value = value
-        self.row = row
-        self.col = col
-        self._update_classes()
+        self._update_display()
     
-    def _update_classes(self) -> None:
-        """Update CSS classes based on value."""
+    def _update_display(self) -> None:
+        """Update display based on value."""
         self.remove_class("tile-empty")
         if self.value == 0:
             self.add_class("tile-empty")
+            self.update("")
+        else:
+            self.update(str(self.value))
     
-    def update_value(self, value: int) -> None:
-        """Update the tile's value and refresh display.
-        
-        Args:
-            value: New tile value
-        """
+    def set_value(self, value: int) -> None:
+        """Set the tile value and refresh."""
         self.value = value
-        self._update_classes()
-        self.refresh()
-    
-    def render(self) -> str:
-        """Render the tile content.
-        
-        Returns:
-            String to display (empty string for 0)
-        """
-        return str(self.value) if self.value != 0 else ""
+        self._update_display()
 
 
 class GridWidget(Static):
-    """The 4x4 game grid widget.
-    
-    Displays all tiles in a grid layout with proper styling.
-    """
+    """The 4x4 game grid widget."""
     
     DEFAULT_CSS = """
     GridWidget {
         width: 100%;
-        height: 18;
+        height: 20;
         background: $surface-darken-2;
         border: solid $primary;
         padding: 1;
+        layout: grid;
+        grid-size: 4 4;
+        grid-gutter: 1 1;
     }
     
-    .tile-row {
-        height: 4;
-        width: 100%;
+    .tile-cell {
+        background: $surface;
+        border: solid $primary-background;
+        content-align: center middle;
+        text-style: bold;
+    }
+    
+    .tile-cell.empty {
+        background: $surface-darken-1;
     }
     """
     
     def __init__(self, game: Game):
-        """Initialize the grid widget.
-        
-        Args:
-            game: Game instance to display
-        """
         super().__init__()
         self.game = game
-        self.tile_widgets: list[list[TileWidget]] = []
+        self.tiles: list[list[TileWidget]] = []
     
     def compose(self) -> ComposeResult:
-        """Compose the grid layout."""
-        self.tile_widgets = []
+        """Compose the 4x4 grid."""
+        self.tiles = []
+        
         for row in range(GRID_SIZE):
-            row_widgets = []
+            tile_row = []
             for col in range(GRID_SIZE):
-                tile = TileWidget(
-                    value=self.game.grid.cells[row][col],
-                    row=row,
-                    col=col
-                )
-                row_widgets.append(tile)
-            self.tile_widgets.append(row_widgets)
-            yield Horizontal(*row_widgets, classes="tile-row")
+                value = self.game.grid.cells[row][col]
+                tile = TileWidget(value)
+                tile.add_class("tile-cell")
+                if value == 0:
+                    tile.add_class("empty")
+                tile_row.append(tile)
+                yield tile
+            self.tiles.append(tile_row)
     
     def refresh_grid(self) -> None:
-        """Refresh all tile values from the game state."""
+        """Refresh all tile values from game state."""
         for row in range(GRID_SIZE):
             for col in range(GRID_SIZE):
                 value = self.game.grid.cells[row][col]
-                tile = self.tile_widgets[row][col]
-                tile.update_value(value)
-        self.refresh()
+                self.tiles[row][col].set_value(value)
 
 
 class ScoreWidget(Static):
@@ -151,44 +124,39 @@ class ScoreWidget(Static):
     #score-label {
         text-style: bold;
         color: $text;
+        margin: 0 2 0 0;
     }
     
     #moves-label {
         color: $text-muted;
+        margin: 0 2 0 0;
     }
     
-    #max-tile-label {
+    #max-label {
         color: $warning;
     }
     """
     
     def __init__(self, game: Game):
-        """Initialize score widget.
-        
-        Args:
-            game: Game instance
-        """
         super().__init__()
         self.game = game
-        self.score_label: Label | None = None
-        self.moves_label: Label | None = None
-        self.max_label: Label | None = None
     
     def compose(self) -> ComposeResult:
         """Compose score display."""
-        self.score_label = Label(f"Score: {self.game.score}", id="score-label")
-        self.moves_label = Label(f"Moves: {self.game.moves}", id="moves-label")
-        self.max_label = Label(f"Max: {self.game.grid.get_max_tile()}", id="max-tile-label")
-        yield Horizontal(self.score_label, self.moves_label, self.max_label)
+        yield Horizontal(
+            Label(f"Score: {self.game.score}", id="score-label"),
+            Label(f"Moves: {self.game.moves}", id="moves-label"),
+            Label(f"Max: {self.game.grid.get_max_tile()}", id="max-label"),
+        )
     
-    def update(self) -> None:
+    def update_display(self) -> None:
         """Update display with current game stats."""
-        if self.score_label:
-            self.score_label.update(f"Score: {self.game.score}")
-        if self.moves_label:
-            self.moves_label.update(f"Moves: {self.game.moves}")
-        if self.max_label:
-            self.max_label.update(f"Max: {self.game.grid.get_max_tile()}")
+        try:
+            self.query_one("#score-label", Label).update(f"Score: {self.game.score}")
+            self.query_one("#moves-label", Label).update(f"Moves: {self.game.moves}")
+            self.query_one("#max-label", Label).update(f"Max: {self.game.grid.get_max_tile()}")
+        except Exception:
+            pass  # Widgets may not be mounted yet
 
 
 class GameOverModal(ModalScreen):
@@ -204,7 +172,7 @@ class GameOverModal(ModalScreen):
         align: center middle;
     }
     
-    #game-over-container {
+    #modal-container {
         width: 50;
         height: auto;
         background: $surface;
@@ -212,61 +180,53 @@ class GameOverModal(ModalScreen):
         padding: 2 4;
     }
     
-    #game-over-title {
-        text-align: center;
-        text-style: bold;
-        color: $error;
-        padding: 1 0;
-    }
-    
-    #game-over-message {
-        text-align: center;
-        padding: 1 0;
-    }
-    
-    #game-over-score {
+    #modal-title {
         text-align: center;
         text-style: bold;
         padding: 1 0;
     }
     
-    #restart-btn {
+    #modal-score {
+        text-align: center;
+        padding: 1 0;
+    }
+    
+    #modal-btn {
         width: 100%;
         margin: 1 0;
     }
     """
     
     def __init__(self, game: Game):
-        """Initialize game over modal.
-        
-        Args:
-            game: Game instance
-        """
         super().__init__()
         self.game = game
     
     def compose(self) -> ComposeResult:
         """Compose modal content."""
-        state_text = "🎉 You Win!" if self.game.state == GameState.WON else "💀 Game Over"
-        message_text = "You reached 2048!" if self.game.state == GameState.WON else "No more moves possible!"
+        if self.game.state == GameState.WON:
+            title = "🎉 You Win!"
+            msg = "You reached 2048!"
+        else:
+            title = "💀 Game Over"
+            msg = "No more moves possible!"
         
-        with Vertical(id="game-over-container"):
-            yield Label(state_text, id="game-over-title")
-            yield Label(message_text, id="game-over-message")
-            yield Label(f"Final Score: {self.game.score}", id="game-over-score")
+        with Vertical(id="modal-container"):
+            yield Label(title, id="modal-title")
+            yield Label(msg, id="modal-message")
+            yield Label(f"Final Score: {self.game.score}", id="modal-score")
             yield Button("Play Again (Enter)", id="restart-btn", variant="primary")
     
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button press."""
         if event.button.id == "restart-btn":
-            self.dismiss(True)  # Signal to restart
+            self.dismiss(True)
     
     def action_restart(self) -> None:
         """Restart the game."""
         self.dismiss(True)
     
     def action_quit(self) -> None:
-        """Close the modal without restarting."""
+        """Close without restarting."""
         self.dismiss(False)
 
 
@@ -284,7 +244,6 @@ class GameScreen(Vertical):
         text-align: center;
         text-style: bold;
         padding: 1 0;
-        color: $text;
     }
     
     #controls-hint {
@@ -295,11 +254,6 @@ class GameScreen(Vertical):
     """
     
     def __init__(self, game: Game):
-        """Initialize game screen.
-        
-        Args:
-            game: Game instance
-        """
         super().__init__()
         self.game = game
         self.grid_widget: GridWidget | None = None
@@ -319,6 +273,6 @@ class GameScreen(Vertical):
     def update_display(self) -> None:
         """Update all widgets with current game state."""
         if self.score_widget:
-            self.score_widget.update()
+            self.score_widget.update_display()
         if self.grid_widget:
             self.grid_widget.refresh_grid()
