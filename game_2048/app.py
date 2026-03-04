@@ -45,26 +45,21 @@ class Game2048App(App):
     }
     """
     
-    # Keyboard bindings
+    # Keyboard bindings - shown in footer
     BINDINGS = [
-        # Movement keys (arrow keys)
-        Binding("up", "move_up", "Up", show=False),
-        Binding("down", "move_down", "Down", show=False),
-        Binding("left", "move_left", "Left", show=False),
-        Binding("right", "move_right", "Right", show=False),
-        
-        # Movement keys (WASD)
-        Binding("w", "move_up", "W", show=False),
-        Binding("a", "move_left", "A", show=False),
-        Binding("s", "move_down", "S", show=False),
-        Binding("d", "move_right", "D", show=False),
+        # Movement keys (arrow keys and WASD)
+        Binding("up", "move_up", "↑", show=True),
+        Binding("down", "move_down", "↓", show=True),
+        Binding("left", "move_left", "←", show=True),
+        Binding("right", "move_right", "→", show=True),
+        Binding("w", "move_up", "W", show=True),
+        Binding("a", "move_left", "A", show=True),
+        Binding("s", "move_down", "S", show=True),
+        Binding("d", "move_right", "D", show=True),
         
         # Game controls
         Binding("r", "restart", "Restart"),
         Binding("q", "quit", "Quit"),
-        
-        # Footer help
-        Binding("question_mark", "show_help", "Help"),
     ]
     
     def __init__(self):

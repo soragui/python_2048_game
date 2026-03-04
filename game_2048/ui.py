@@ -19,22 +19,43 @@ class GridDisplay(Static):
         height: 12;
         content-align: center top;
         align: center middle;
-        background: $surface-darken-2;
-        border: solid $primary;
+        background: #3a3a3a;  /* Dark gray background like original 2048 */
+        border: solid #bbada0;
         padding: 1 2;
         margin: 1 0;
     }
     """
     
+    # Tile colors matching original 2048 game
+    TILE_COLORS = {
+        0: "#cdc1b4",      # Empty cell
+        2: "#eee4da",      # 2
+        4: "#ede0c8",      # 4
+        8: "#f2b179",      # 8
+        16: "#f59563",     # 16
+        32: "#f67c5f",     # 32
+        64: "#f65e3b",     # 64
+        128: "#edcf72",    # 128
+        256: "#edcc61",    # 256
+        512: "#edc850",    # 512
+        1024: "#edc53f",   # 1024
+        2048: "#edc22e",   # 2048
+    }
+    
     def __init__(self, game: Game):
         super().__init__()
         self.game = game
     
+    def _get_cell_color(self, value: int) -> str:
+        """Get color code for a tile value."""
+        return self.TILE_COLORS.get(value, self.TILE_COLORS[2048])
+    
     def render(self) -> str:
-        """Render the grid as text."""
-        cells = self.game.grid.cells
+        """Render the grid with colored cells."""
+        from rich.text import Text
+        from rich.style import Style
         
-        # Build grid display
+        cells = self.game.grid.cells
         lines = []
         
         # Top border
@@ -59,7 +80,40 @@ class GridDisplay(Static):
         # Bottom border
         lines.append("└" + "────┴" * (GRID_SIZE - 1) + "────┘")
         
-        return "\n".join(lines)
+        # Create rich text with colors
+        result = Text()
+        for line_idx, line in enumerate(lines):
+            for char_idx, char in enumerate(line):
+                # Determine color for this position
+                if line_idx == 0 or line_idx == len(lines) - 1:
+                    # Border rows - use border color
+                    style = Style(color="#bbada0")
+                elif line_idx % 2 == 0:
+                    # Separator rows
+                    style = Style(color="#bbada0")
+                else:
+                    # Cell rows - check if we're in a cell
+                    cell_row = line_idx // 2
+                    # Simple coloring: color the numbers
+                    if char.isdigit():
+                        cell_col = char_idx // 5
+                        if cell_col < GRID_SIZE:
+                            value = cells[cell_row][cell_col]
+                            color = self._get_cell_color(value)
+                            style = Style(color=color, bold=True)
+                        else:
+                            style = Style(color="#cdc1b4")
+                    elif char in "│├┼┤":
+                        style = Style(color="#bbada0")
+                    else:
+                        style = Style(color="#cdc1b4")
+                
+                result.append(char, style)
+            
+            if line_idx < len(lines) - 1:
+                result.append("\n")
+        
+        return result
     
     def refresh_display(self) -> None:
         """Refresh the grid display."""
@@ -71,10 +125,10 @@ class ScoreDisplay(Static):
     
     DEFAULT_CSS = """
     ScoreDisplay {
-        width: 100%;
+        width: 42;
         height: auto;
         content-align: center middle;
-        background: $primary-background;
+        background: #bbada0;  /* Match 2048 theme */
         padding: 1 2;
         margin: 1 0;
         text-style: bold;
