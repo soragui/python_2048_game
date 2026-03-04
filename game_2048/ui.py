@@ -24,6 +24,23 @@ class TileWidget(Static):
     The tile's appearance (color, style) changes based on its value.
     """
     
+    DEFAULT_CSS = """
+    TileWidget {
+        width: 1fr;
+        height: 100%;
+        content-align: center middle;
+        background: $surface;
+        border: solid $primary-background;
+        margin: 0 1;
+        text-style: bold;
+    }
+    
+    TileWidget.tile-empty {
+        background: $surface-darken-1;
+        color: $text-muted;
+    }
+    """
+    
     def __init__(self, value: int, row: int, col: int):
         """Initialize a tile widget.
         
@@ -32,10 +49,17 @@ class TileWidget(Static):
             row: Grid row position
             col: Grid column position
         """
-        super().__init__()
+        super().__init__(id=f"tile-{row}-{col}")
         self.value = value
         self.row = row
         self.col = col
+        self._update_classes()
+    
+    def _update_classes(self) -> None:
+        """Update CSS classes based on value."""
+        self.remove_class("tile-empty")
+        if self.value == 0:
+            self.add_class("tile-empty")
     
     def update_value(self, value: int) -> None:
         """Update the tile's value and refresh display.
@@ -44,6 +68,7 @@ class TileWidget(Static):
             value: New tile value
         """
         self.value = value
+        self._update_classes()
         self.refresh()
     
     def render(self) -> str:
@@ -64,8 +89,7 @@ class GridWidget(Static):
     DEFAULT_CSS = """
     GridWidget {
         width: 100%;
-        height: auto;
-        max-height: 20;
+        height: 18;
         background: $surface-darken-2;
         border: solid $primary;
         padding: 1;
@@ -74,20 +98,6 @@ class GridWidget(Static):
     .tile-row {
         height: 4;
         width: 100%;
-    }
-    
-    .tile-cell {
-        width: 1fr;
-        height: 100%;
-        content-align: center middle;
-        background: $surface;
-        border: solid $primary-background;
-        margin: 0 1;
-        text-style: bold;
-    }
-    
-    .tile-empty {
-        background: $surface-darken-1;
     }
     """
     
@@ -112,9 +122,6 @@ class GridWidget(Static):
                     row=row,
                     col=col
                 )
-                tile.add_class("tile-cell")
-                if self.game.grid.cells[row][col] == 0:
-                    tile.add_class("tile-empty")
                 row_widgets.append(tile)
             self.tile_widgets.append(row_widgets)
             yield Horizontal(*row_widgets, classes="tile-row")
@@ -126,12 +133,6 @@ class GridWidget(Static):
                 value = self.game.grid.cells[row][col]
                 tile = self.tile_widgets[row][col]
                 tile.update_value(value)
-                
-                # Update styling based on value
-                tile.remove_class("tile-empty")
-                if value == 0:
-                    tile.add_class("tile-empty")
-        
         self.refresh()
 
 
@@ -269,7 +270,7 @@ class GameOverModal(ModalScreen):
         self.dismiss(False)
 
 
-class GameScreen(Static):
+class GameScreen(Vertical):
     """Main game screen containing all game widgets."""
     
     DEFAULT_CSS = """
