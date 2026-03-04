@@ -100,10 +100,9 @@ class GridWidget(Static):
         super().__init__()
         self.game = game
         self.tile_widgets: list[list[TileWidget]] = []
-        self._create_tile_grid()
     
-    def _create_tile_grid(self) -> None:
-        """Create the 2D array of tile widgets."""
+    def compose(self) -> ComposeResult:
+        """Compose the grid layout."""
         self.tile_widgets = []
         for row in range(GRID_SIZE):
             row_widgets = []
@@ -118,14 +117,7 @@ class GridWidget(Static):
                     tile.add_class("tile-empty")
                 row_widgets.append(tile)
             self.tile_widgets.append(row_widgets)
-    
-    def compose(self) -> ComposeResult:
-        """Compose the grid layout."""
-        for row in range(GRID_SIZE):
-            row_container = Horizontal(classes="tile-row")
-            for col in range(GRID_SIZE):
-                row_container.mount(self.tile_widgets[row][col])
-            yield row_container
+            yield Horizontal(*row_widgets, classes="tile-row")
     
     def refresh_grid(self) -> None:
         """Refresh all tile values from the game state."""
@@ -177,20 +169,25 @@ class ScoreWidget(Static):
         """
         super().__init__()
         self.game = game
+        self.score_label: Label | None = None
+        self.moves_label: Label | None = None
+        self.max_label: Label | None = None
     
     def compose(self) -> ComposeResult:
         """Compose score display."""
-        yield Horizontal(
-            Label(f"Score: {self.game.score}", id="score-label"),
-            Label(f"Moves: {self.game.moves}", id="moves-label"),
-            Label(f"Max: {self.game.grid.get_max_tile()}", id="max-tile-label"),
-        )
+        self.score_label = Label(f"Score: {self.game.score}", id="score-label")
+        self.moves_label = Label(f"Moves: {self.game.moves}", id="moves-label")
+        self.max_label = Label(f"Max: {self.game.grid.get_max_tile()}", id="max-tile-label")
+        yield Horizontal(self.score_label, self.moves_label, self.max_label)
     
     def update(self) -> None:
         """Update display with current game stats."""
-        self.query_one("#score-label", Label).update(f"Score: {self.game.score}")
-        self.query_one("#moves-label", Label).update(f"Moves: {self.game.moves}")
-        self.query_one("#max-tile-label", Label).update(f"Max: {self.game.grid.get_max_tile()}")
+        if self.score_label:
+            self.score_label.update(f"Score: {self.game.score}")
+        if self.moves_label:
+            self.moves_label.update(f"Moves: {self.game.moves}")
+        if self.max_label:
+            self.max_label.update(f"Max: {self.game.grid.get_max_tile()}")
 
 
 class GameOverModal(ModalScreen):
@@ -252,13 +249,11 @@ class GameOverModal(ModalScreen):
         state_text = "🎉 You Win!" if self.game.state == GameState.WON else "💀 Game Over"
         message_text = "You reached 2048!" if self.game.state == GameState.WON else "No more moves possible!"
         
-        yield Vertical(
-            Label(state_text, id="game-over-title"),
-            Label(message_text, id="game-over-message"),
-            Label(f"Final Score: {self.game.score}", id="game-over-score"),
-            Button("Play Again (Enter)", id="restart-btn", variant="primary"),
-            id="game-over-container"
-        )
+        with Vertical(id="game-over-container"):
+            yield Label(state_text, id="game-over-title")
+            yield Label(message_text, id="game-over-message")
+            yield Label(f"Final Score: {self.game.score}", id="game-over-score")
+            yield Button("Play Again (Enter)", id="restart-btn", variant="primary")
     
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button press."""
