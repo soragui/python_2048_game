@@ -9,7 +9,6 @@ This module ties together all components:
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer
 from textual.binding import Binding
-from textual import events
 
 from .game import Game, GameState
 from .ui import GameScreen, GameOverModal
@@ -167,18 +166,6 @@ class Game2048App(App):
                 self.refresh_display()
         
         self.push_screen(GameOverModal(self.game), callback)
-    
-    def on_key(self, event: events.Key) -> None:
-        """Handle key press events.
-        
-        This is a fallback for any keys not handled by bindings.
-        
-        Args:
-            event: Key event
-        """
-        # Prevent default handling for game keys
-        if event.key in ["up", "down", "left", "right", "w", "a", "s", "d"]:
-            event.prevent_default()
 
 
 def run_game() -> None:
